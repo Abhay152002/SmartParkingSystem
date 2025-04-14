@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" class="transition duration-500">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Car Parking Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class'
+    }
+  </script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-all">
+
+  <!-- Navbar -->
+  <div class="flex justify-between items-center px-6 py-4 bg-white dark:bg-gray-800 shadow">
+    <h1 class="text-2xl font-bold text-blue-600 dark:text-blue-400">🚗 Smart Parking Dashboard</h1>
+    <div class="flex gap-4">
+      <button onclick="toggleDarkMode()" class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-4 py-2 rounded">🌓 Toggle Mode</button>
+      <a href="/logout" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">Logout</a>
+    </div>
+  </div>
+
+  <!-- Camera Source Switch -->
+  <div class="flex justify-center my-4">
+    <form onsubmit="event.preventDefault(); changeSource();" class="flex gap-2 items-center">
+      <input id="cameraInput" type="text" placeholder="0 for webcam or IP stream URL"
+             class="border border-gray-300 dark:border-gray-600 rounded px-4 py-2 w-80 bg-white dark:bg-gray-700 dark:text-white" />
+      <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Switch Camera</button>
+    </form>
+  </div>
+
+  <!-- Control Buttons -->
+  <div class="flex flex-wrap justify-center gap-4 my-6">
+    <button onclick="toggle('show')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow">Show Video</button>
+    <button onclick="toggle('close')" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow">Hide Video</button>
+    <button onclick="saveHistory()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded shadow">Save History</button>
+    <button onclick="showHistory()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded shadow">Show History</button>
+    <button onclick="closeHistory()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded shadow">Close History</button>
+    <button onclick="downloadCSV()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow">Download CSV</button>
+  </div>
+
+  <!-- Video -->
+  <div class="flex justify-center">
+    <img id="videoFeed" src="/video" class="rounded-xl border-4 border-blue-500 dark:border-blue-300 shadow-md" width="960" height="540">
+  </div>
+
+  <!-- Status Message -->
+  <p id="statusMsg" class="text-center text-lg mt-4 font-semibold text-green-700 dark:text-green-300"></p>
+
+  <!-- History Table -->
+  <div class="mt-10 overflow-x-auto px-6">
+    <table id="history" class="table-auto w-full text-sm hidden border border-gray-300 dark:border-gray-600 shadow-md">
+      <thead class="bg-blue-100 dark:bg-blue-900 border-b">
+        <tr>
+          <th class="px-4 py-2">Timestamp</th>
+          <th class="px-4 py-2" colspan="100">Spots</th>
+        </tr>
+      </thead>
+      <tbody id="historyBody" class="bg-white dark:bg-gray-800"></tbody>
+    </table>
+  </div>
+
+  <script>
+    function toggle(action) {
+      fetch(`/toggle/${action}`);
+      document.getElementById("statusMsg").innerText = action === 'show' ? "🎥 Video Shown" : "⛔ Video Hidden";
+    }
+
+    function saveHistory() {
+      fetch('/save-history')
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("statusMsg").innerText = data.message || "Saved!";
+        });
+    }
+
+    function showHistory() {
+      fetch('/get-history')
+        .then(res => res.json())
+        .then(data => {
+          const table = document.getElementById("history");
+          const tbody = document.getElementById("historyBody");
+          tbody.innerHTML = "";
+          data.forEach(row => {
+            const tr = document.createElement("tr");
+            row.forEach(cell => {
+              const td = document.createElement("td");
+              td.textContent = cell;
+              td.className = "border px-4 py-2";
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          });
+          table.classList.remove("hidden");
+          document.getElementById("statusMsg").innerText = "📋 History Shown";
+        });
+    }
+
+    function closeHistory() {
+      document.getElementById("history").classList.add("hidden");
+      document.getElementById("statusMsg").innerText = "📂 History Closed";
+    }
+
+    function downloadCSV() {
+      fetch('/get-history')
+        .then(res => res.json())
+        .then(data => {
+          let csv = data.map(row => row.join(',')).join('\n');
+          let blob = new Blob([csv], { type: 'text/csv' });
+          let url = URL.createObjectURL(blob);
+          let a = document.createElement('a');
+          a.href = url;
+          a.download = 'parking_history.csv';
+          a.click();
+        });
+    }
+
+    function changeSource() {
+      const source = document.getElementById("cameraInput").value;
+      fetch('/set-source', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `source=${encodeURIComponent(source)}`
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message || data.error);
+        document.getElementById("statusMsg").innerText = data.message || data.error;
+      });
+    }
+
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle('dark');
+    }
+
+    // Optional: Auto-save every 30s
+    setInterval(() => {
+      fetch('/save-history');
+    }, 30000);
+  </script>
+</body>
+</html>

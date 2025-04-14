@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login | Smart Car Parking</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class'
+    }
+  </script>
+  <style>
+    .bg-video::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4); /* Optional dark overlay */
+      z-index: 1;
+    }
+  </style>
+</head>
+<body class="relative h-screen bg-video overflow-hidden">
+
+  <!-- 🔄 Video Background -->
+  <video autoplay muted loop playsinline class="absolute inset-0 w-full h-full object-cover z-0">
+    <source src="{{ url_for('static', filename='carparking.mp4') }}" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+
+  <!-- 🔒 Login Form -->
+  <div class="relative z-10 flex items-center justify-center h-full px-4">
+    <form method="POST" class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md p-8 rounded-xl shadow-lg w-full max-w-sm">
+      <h2 class="text-3xl font-bold mb-6 text-center text-blue-700 dark:text-blue-400">🚗 Login</h2>
+
+      {% if error %}
+        <p class="text-red-600 text-sm mb-4 text-center">{{ error }}</p>
+      {% endif %}
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-1 dark:text-white">Username</label>
+        <input name="username" required placeholder="Enter username"
+               class="w-full px-4 py-2 border rounded-md bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium mb-1 dark:text-white">Password</label>
+        <input type="password" name="password" required placeholder="Enter password"
+               class="w-full px-4 py-2 border rounded-md bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+      </div>
+
+      <button type="submit"
+              class="bg-blue-500 hover:bg-blue-600 w-full text-white px-4 py-2 rounded-md shadow">
+        Login
+      </button>
+    </form>
+  </div>
+</body>
+</html>
